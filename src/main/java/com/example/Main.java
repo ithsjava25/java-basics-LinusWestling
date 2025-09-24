@@ -4,10 +4,7 @@ import com.example.api.ElpriserAPI;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -41,18 +38,15 @@ public class Main {
         boolean sorteraPriser = false;
         System.out.println("Vill du sortera på pris? (y/n): ");
         String sorteraPris = scanner.nextLine().trim().toLowerCase();
-        if (sorteraPris.equals("y")){
+        if (sorteraPris.equals("y"))
             sorteraPriser = true;
-        } else {
-            System.out.println("Ogiltig inmatning av sortering på pris.");
-        }
+
 
 
         System.out.println("Påbörja laddning"); // Behövs vara med enligt testet????
 
 
         // IF ---- Enhanced loop for att få fram alla områden
-        // ELSE --- framtagning av pris för specifikt område
         if(valAvPrisKlass.equals("ALLA")){
             for(ElpriserAPI.Prisklass klass : ElpriserAPI.Prisklass.values()){
                 List<ElpriserAPI.Elpris> allaDagensPriser = elpriserAPI.getPriser(datum, klass);
@@ -61,15 +55,31 @@ public class Main {
                 if (allaDagensPriser.isEmpty()) {
                     System.out.println("Kunde inte hämta några priser för " + datum + " i område: " + klass);
                 } else {
-                    System.out.println("\nDagens elpriser för " + klass + " (" + allaDagensPriser.size() + " st värden):");
-                    // Skriv bara ut de 3 första för att hålla utskriften kort
-                    allaDagensPriser.stream().limit(3).forEach(pris ->
-                            System.out.printf("Tid: %s, Pris: %.4f SEK/kWh\n",
-                                    pris.timeStart().toLocalTime(), pris.sekPerKWh()));
-                    if (allaDagensPriser.size() > 3) System.out.println("...");
+
+                    // IF -- Om användaren vill ha priserna sorterade
+                    if (sorteraPriser){
+                        allaDagensPriser.sort(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh).reversed());
+                        System.out.println("\nDagens elpriser för " + klass + " (" + allaDagensPriser.size() + " st värden):");
+                        // Skriv bara ut de 3 första för att hålla utskriften kort
+                        allaDagensPriser.stream().limit(8).forEach(pris ->
+                                System.out.printf("Tid: %s, Pris: %.4f SEK/kWh\n",
+                                        pris.timeStart().toLocalTime(), pris.sekPerKWh()));
+                        if (allaDagensPriser.size() > 8) System.out.println("...");
+                    }
+                    // ELSE -- Om användaren vill ha priserna sorterat på tid (default)
+                    else {
+                        System.out.println("\nDagens elpriser för " + klass + " (" + allaDagensPriser.size() + " st värden):");
+                        // Skriv bara ut de 3 första för att hålla utskriften kort
+                        allaDagensPriser.stream().limit(3).forEach(pris ->
+                                System.out.printf("Tid: %s, Pris: %.4f SEK/kWh\n",
+                                        pris.timeStart().toLocalTime(), pris.sekPerKWh()));
+                        if (allaDagensPriser.size() > 3) System.out.println("...");
+                    }
                 }
             }
-        } else {
+        }
+        // ELSE --- framtagning av pris för specifikt område
+        else {
             try{
                 ElpriserAPI.Prisklass valdKlass = ElpriserAPI.Prisklass.valueOf(valAvPrisKlass);
                 List<ElpriserAPI.Elpris> dagensPriser = elpriserAPI.getPriser(datum, valdKlass);
@@ -77,12 +87,25 @@ public class Main {
                 if (dagensPriser.isEmpty()) {
                     System.out.println("Kunde inte hämta några priser för " + datum + " i område: " + valdKlass);
                 } else {
-                    System.out.println("\nDagens elpriser för " + valdKlass + " (" + dagensPriser.size() + " st värden):");
-                    // Skriv bara ut de 3 första för att hålla utskriften kort
-                    dagensPriser.stream().limit(3).forEach(pris ->
-                            System.out.printf("Tid: %s, Pris: %.4f SEK/kWh\n",
-                                    pris.timeStart().toLocalTime(), pris.sekPerKWh()));
-                    if (dagensPriser.size() > 3) System.out.println("...");
+                    // IF -- Om användaren vill ha priserna sorterade
+                    if (sorteraPriser){
+                        dagensPriser.sort(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh).reversed());
+                        System.out.println("\nDagens elpriser för " + valdKlass + " (" + dagensPriser.size() + " st värden):");
+                        // Skriv bara ut de 3 första för att hålla utskriften kort
+                        dagensPriser.stream().limit(8).forEach(pris ->
+                                System.out.printf("Tid: %s, Pris: %.4f SEK/kWh\n",
+                                        pris.timeStart().toLocalTime(), pris.sekPerKWh()));
+                        if (dagensPriser.size() > 8) System.out.println("...");
+                    }
+                    // ELSE -- Om användaren vill ha priserna sorterat på tid (default)
+                    else {
+                        System.out.println("\nDagens elpriser för " + valdKlass + " (" + dagensPriser.size() + " st värden):");
+                        // Skriv bara ut de 3 första för att hålla utskriften kort
+                        dagensPriser.stream().limit(3).forEach(pris ->
+                                System.out.printf("Tid: %s, Pris: %.4f SEK/kWh\n",
+                                        pris.timeStart().toLocalTime(), pris.sekPerKWh()));
+                        if (dagensPriser.size() > 3) System.out.println("...");
+                    }
                 }
             } catch (IllegalArgumentException e){
                 System.out.println("Ogiltigt område angivet, försök igen.");
