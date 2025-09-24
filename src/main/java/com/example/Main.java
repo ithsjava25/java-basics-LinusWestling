@@ -4,6 +4,8 @@ import com.example.api.ElpriserAPI;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
@@ -35,6 +37,16 @@ public class Main {
             datum = idag;
         }
 
+        // Sortera listan utifrån pris istället för tid
+        boolean sorteraPriser = false;
+        System.out.println("Vill du sortera på pris? (y/n): ");
+        String sorteraPris = scanner.nextLine().trim().toLowerCase();
+        if (sorteraPris.equals("y")){
+            sorteraPriser = true;
+        } else {
+            System.out.println("Ogiltig inmatning av sortering på pris.");
+        }
+
 
         System.out.println("Påbörja laddning"); // Behövs vara med enligt testet????
 
@@ -44,6 +56,7 @@ public class Main {
         if(valAvPrisKlass.equals("ALLA")){
             for(ElpriserAPI.Prisklass klass : ElpriserAPI.Prisklass.values()){
                 List<ElpriserAPI.Elpris> allaDagensPriser = elpriserAPI.getPriser(datum, klass);
+
 
                 if (allaDagensPriser.isEmpty()) {
                     System.out.println("Kunde inte hämta några priser för " + datum + " i område: " + klass);
