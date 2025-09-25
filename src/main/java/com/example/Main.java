@@ -19,21 +19,15 @@ public class Main {
 
 
         // Skapa en variabel för vilken dag man vill hämta priser
-        LocalDate idag = LocalDate.now();
-        LocalDate datum;
+        LocalDate datum = LocalDate.now();
         System.out.println("Vill du hämta priser för idag eller imorgon? (idag/imorgon)");
         String vilkenDag = scanner.nextLine().trim().toUpperCase();
         
 
-        // Kolla vilken dag användaren har valt
-        if (vilkenDag.equals("IDAG")){
-            datum = idag;
-        }else if (vilkenDag.equals("IMORGON")) {
-            datum = idag.plusDays(1);
-        } else {
-            System.out.println("Ogiltigt datum, default är dagens datum");
-            datum = idag;
-        }
+        // Default är dagens datum, kollar ifall användaren vill ha morgondagens och ändrar
+        if (vilkenDag.equals("IMORGON"))
+            datum = datum.plusDays(1);
+
 
         // Sortera listan utifrån pris istället för tid
         boolean sorteraPriser = false;
@@ -51,7 +45,7 @@ public class Main {
             if (kollaOptimaltLaddningsFönster.equals("Y")){
                 System.out.println("Hur många timmar vill du ladda? ");
                 int antalTimmar = scanner.nextInt();
-                optimaltLaddningsFönster(valAvPrisKlass, datum, antalTimmar);
+                optimaltLaddningsFönster(ElpriserAPI.Prisklass.valueOf(valAvPrisKlass), datum, antalTimmar);
             }
         }
 
@@ -61,20 +55,12 @@ public class Main {
         // IF ---- Enhanced loop for att få fram alla områden
         if(valAvPrisKlass.equals("ALLA")){
             for(ElpriserAPI.Prisklass valdKlass : ElpriserAPI.Prisklass.values()){
-                List<ElpriserAPI.Elpris> allaDagensPriser = elpriserAPI.getPriser(datum, valdKlass);
+                //List<ElpriserAPI.Elpris> allaDagensPriser = elpriserAPI.getPriser(datum, valdKlass);
 
                 if (allaDagensPriser.isEmpty()) {
                     System.out.println("Kunde inte hämta några priser för " + datum + " i område: " + valAvPrisKlass);
                 } else {
-
-                    // IF -- Om användaren vill ha priserna sorterade
-                    if (sorteraPriser){
-                        skrivUtSorteradePriser(valdKlass, allaDagensPriser, 8);
-                    }
-                    // ELSE -- Om användaren vill ha priserna sorterat på tid (default)
-                    else {
-                        skrivUtPriser(valdKlass, allaDagensPriser, 3);
-                    }
+                    skrivUtPriser(valdKlass, allaDagensPriser, sorteraPriser, 3);
                 }
             }
         }
@@ -87,32 +73,19 @@ public class Main {
                 if (dagensPriser.isEmpty()) {
                     System.out.println("Kunde inte hämta några priser för " + datum + " i område: " + valdKlass);
                 } else {
-                    // IF -- Om användaren vill ha priserna sorterade
-                    if (sorteraPriser){
-                        skrivUtSorteradePriser(valdKlass, dagensPriser, 8);
-                    }
-                    // ELSE -- Om användaren vill ha priserna sorterat på tid (default)
-                    else {
-                        skrivUtPriser(valdKlass, dagensPriser, 3);
-                    }
+                    skrivUtPriser(valdKlass, dagensPriser, sorteraPriser, 3);
                 }
             } catch (IllegalArgumentException e){
                 System.out.println("Ogiltigt område angivet, försök igen.");
             }
         }
     }
-    public static void skrivUtPriser(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int maxAntal){
+    public static void skrivUtPriser(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, boolean sorteraPriser, int maxAntal){
+        if (sorteraPriser)
+            priser.sort(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh).reversed());
+
         System.out.println("\nDagens elpriser för " + valdKlass + " (" + priser.size() + " st värden):");
-        // Skriv bara ut de 3 första för att hålla utskriften kort
-        priser.stream().limit(3).forEach(pris ->
-                System.out.printf("Tid: %s, Pris: %.4f SEK/kWh\n",
-                        pris.timeStart().toLocalTime(), pris.sekPerKWh()));
-        if (priser.size() > 3) System.out.println("...");
-    }
-    public static void skrivUtSorteradePriser(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int maxAntal){
-        priser.sort(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh).reversed());
-        System.out.println("\nDagens elpriser för " + valdKlass + " (" + priser.size() + " st värden):");
-        // Skriv bara ut de 3 första för att hålla utskriften kort
+        // Skriv ut antal rader som efterfrågas i metoden
         priser.stream().limit(8).forEach(pris ->
                 System.out.printf("Tid: %s, Pris: %.4f SEK/kWh\n",
                         pris.timeStart().toLocalTime(), pris.sekPerKWh()));
