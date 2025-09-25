@@ -50,7 +50,7 @@ public class Main {
             if (kollaOptimaltLaddningsFönster.equals("Y")){
                 System.out.println("Hur många timmar vill du ladda? ");
                 int antalTimmar = scanner.nextInt();
-                optimaltLaddningsFönster(ElpriserAPI.Prisklass.valueOf(valAvPrisKlass), datum, antalTimmar);
+                optimaltLaddningsFönster(ElpriserAPI.Prisklass.valueOf(valAvPrisKlass), dagensPriser, antalTimmar);
             }
         }
 
@@ -63,7 +63,7 @@ public class Main {
                 if (dagensPriser.isEmpty()) {
                     System.out.println("Kunde inte hämta några priser för " + datum + " i område: " + valAvPrisKlass);
                 } else {
-                    skrivUtPriser(valdKlass, dagensPriser, sorteraPriser, 3);
+                    skrivUtPriser(allaKlasser, dagensPriser, sorteraPriser, 3);
                 }
             }
         }
@@ -119,7 +119,7 @@ public class Main {
             }
         }
         // Skriv ut priserna
-        if (bästaStartIndex < 0){
+        if (bästaStartIndex >= 0){
             System.out.println("\nOptimalt laddningsfönster för " + valdKlass + " (" + antalTimmar + "h):");
             for (int i = bästaStartIndex; i < bästaStartIndex + antalTimmar; i++){
                 ElpriserAPI.Elpris pris = priser.get(i);
