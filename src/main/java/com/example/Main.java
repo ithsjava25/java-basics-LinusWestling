@@ -4,6 +4,7 @@ import com.example.api.ElpriserAPI;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Main {
@@ -45,22 +46,7 @@ public class Main {
             return;
         }
 
-
-        /*
-        // IF ---- Enhanced loop for att få fram alla områden
-        if(valAvPrisKlass.equals("ALLA")){
-            for(ElpriserAPI.Prisklass allaKlasser : ElpriserAPI.Prisklass.values()){
-                if (dagensPriser.isEmpty()) {
-                    System.out.println("Kunde inte hämta några priser för " + datum + " i område: " + valAvPrisKlass);
-                } else {
-                    skrivUtPriser(allaKlasser, dagensPriser, sorteraPriser, 3);
-                }
-            }
-        }
-
-         */
-        // framtagning av pris för specifikt område
-
+        // framtagning av pris
         if (dagensPriser.isEmpty()) {
             System.out.println("inga priser för: " + datum + " i område: " + valdKlass);
         } else {
@@ -110,13 +96,17 @@ public class Main {
         }
 
         System.out.println("\nDagens elpriser för " + valdKlass + " (" + priser.size() + " st värden):");
-        System.out.println("\nMedelpriset för dagen är: " + ((meanPrice/priser.size()) * 100) + " Öre");
-        System.out.println("Lägsta priset är: "+ (lowestPrice * 100) + " Öre");
-        System.out.println("Högsta priset är: "+ (highestPrice * 100) + " Öre\n");
+        System.out.printf("Medelpriset för dagen är: %.2f öre", ((meanPrice/priser.size()) * 100));
+        System.out.printf("Lägsta priset är: %.2f öre", (lowestPrice * 100));
+        System.out.printf("Högsta priset är: %.2f öre\n", (highestPrice * 100));
         // Skriv ut antal rader som efterfrågas i metoden
-        priser.stream().limit(maxAntal).forEach(pris ->
-                System.out.printf("Tid: %s, Pris: %.4f SEK/kWh\n",
-                        pris.timeStart().toLocalTime(), pris.sekPerKWh()));
+        priser.stream().limit(maxAntal).forEach(pris -> {
+            LocalTime startTid = pris.timeStart().toLocalTime();
+            LocalTime slutTid = startTid.plusHours(1);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH");
+            System.out.printf("Klockan: %s-%s, Pris: %.4f öre\n",
+                    startTid.format(formatter), slutTid.format(formatter), (pris.sekPerKWh() * 100));
+        });
         if (priser.size() > maxAntal) System.out.println("...");
     }
     public static void optimaltLaddningsFönster(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int antalTimmar){
@@ -141,7 +131,7 @@ public class Main {
         }
         // Skriv ut priserna
         if (bästaStartIndex >= 0){
-            System.out.println("\nLägsta pris för att ladda är: " + valdKlass + " (" + antalTimmar + "h):");
+            System.out.println("\nLägsta pris för att ladda inom: " + valdKlass + " (" + antalTimmar + "h):");
             for (int i = bästaStartIndex; i < bästaStartIndex + antalTimmar; i++){
                 ElpriserAPI.Elpris pris = priser.get(i);
                 System.out.printf("Klockan: %s, Pris: %.4f SEK/kWh\n",
@@ -149,7 +139,7 @@ public class Main {
             }
             LocalTime påBörjaLaddning = LocalTime.of(bästaStartIndex, 0);
             System.out.println("\nPåbörja laddning kl " + påBörjaLaddning);
-            System.out.printf("Totalt pris för %dh: %.1f Öre. Varav medelpris för fönster: %.2f Öre\n", antalTimmar, (lägstaPris * 100), ((lägstaPris/antalTimmar) * 100));
+            System.out.printf("Totalt pris för %dh: %.1f öre. Medelpris för fönster: %.2f öre\n", antalTimmar, (lägstaPris * 100), ((lägstaPris/antalTimmar) * 100));
         } else {
             System.out.println("Något gick fel när jag försökte hitta laddningsfönster för " + valdKlass);
         }
