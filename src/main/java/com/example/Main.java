@@ -9,51 +9,41 @@ public class Main {
     public static void main(String[] args) {
 
         System.out.println("___________ Testar Elpriser API _____________");
-        Scanner scanner = new Scanner(System.in);
+        Map<String, String> argMap = parseArgs(args);
+
+        if (argMap.containsKey("help")) {
+            skrivUtHjälp();
+            return;
+        }
+
+        // SKapa API objekt
         ElpriserAPI elpriserAPI = new ElpriserAPI();
 
+        // Kollar ifall input innehåller zon som man vill kolla efter
+        if (!argMap.containsKey("zone")) {
+            System.out.println("Du måste ange --zone");
+            return;
+        }
+        String valAvPrisKlass = argMap.get("zone").toUpperCase();
 
-        //Frågar användaren om vilket område man vill hämta priser ifrån
-        System.out.println("Vilket område skulle du vilja hämta priser ifrån? (alla|SE1|SE2|SE3|SE4): ");
-        String valAvPrisKlass = scanner.nextLine().trim().toUpperCase();
         // Skapar ett objekt för värden inom definierad prisklass
         ElpriserAPI.Prisklass valdKlass = ElpriserAPI.Prisklass.valueOf(valAvPrisKlass);
 
 
         // Skapa en variabel för vilken dag man vill hämta priser
-        LocalDate datum = LocalDate.now();
-        System.out.println("Vill du hämta priser för idag eller imorgon? (idag/imorgon)");
-        String vilkenDag = scanner.nextLine().trim().toUpperCase();
-        
-
-        // Default är dagens datum, kollar ifall användaren vill ha morgondagens och ändrar
-        if (vilkenDag.equals("IMORGON"))
-            datum = datum.plusDays(1);
+        LocalDate datum = argMap.containsKey("date") ? LocalDate.parse(argMap.get("date")) : LocalDate.now();
 
         // Hämta priser för valt elområde och datum
         List<ElpriserAPI.Elpris> dagensPriser = elpriserAPI.getPriser(datum, valdKlass);
 
-
-        // Sortera listan utifrån pris istället för tid
-        boolean sorteraPriser = false;
-        System.out.println("Vill du sortera på pris? (y/n): ");
-        String sorteraPris = scanner.nextLine().trim().toLowerCase();
-        if (sorteraPris.equals("y"))
-            sorteraPriser = true;
-
+        // Kolla ifall användaren vill sortera priserna
+        boolean sorteraPriser = argMap.containsKey("sorted");
 
         // Kalla på metod för optimalt laddningsfönster
-        if (!valAvPrisKlass.equals("ALLA") && !sorteraPriser){
-            System.out.println("Vill du kolla efter optimalt laddningsfönster? (y/n): ");
-            String kollaOptimaltLaddningsFönster = scanner.nextLine().trim().toUpperCase();
-            
-            if (kollaOptimaltLaddningsFönster.equals("Y")){
-                System.out.println("Hur många timmar vill du ladda? ");
-                int antalTimmar = scanner.nextInt();
-                optimaltLaddningsFönster(ElpriserAPI.Prisklass.valueOf(valAvPrisKlass), dagensPriser, antalTimmar);
-            }
+        if (argMap.containsKey("charging")) {
+            int antalTimmar = Integer.parseInt(argMap.get("charging").replace("h", ""));
+            optimaltLaddningsFönster(valdKlass, dagensPriser, antalTimmar);
         }
-
 
         System.out.println("Påbörja laddning"); // Behövs vara med enligt testet????
 
@@ -80,6 +70,27 @@ public class Main {
             }
         }
     }
+    public static Map<String, String> parseArgs(String[] args) {
+        Map<String, String> map = new HashMap<>();
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].startsWith("--")) {
+                String key = args[i].substring(2).toLowerCase();
+                String value = (i + 1 < args.length && !args[i + 1].startsWith("--")) ? args[++i] : "true";
+                map.put(key, value);
+            }
+        }
+        return map;
+    }
+    public static void skrivUtHjälp() {
+        System.out.println("Användning:");
+        System.out.println("--zone SE1|SE2|SE3|SE4 (obligatorisk)");
+        System.out.println("--date YYYY-MM-DD (valfri, standard är idag)");
+        System.out.println("--sorted (valfri, sorterar priser fallande)");
+        System.out.println("--charging 2h|4h|8h (valfri, visar optimalt laddningsfönster)");
+        System.out.println("--help (visar denna hjälptext)");
+        System.out.println("Exempel:");
+        System.out.println("java -cp target/classes com.example.Main --zone SE3 --date 2025-09-04");
+    }
     public static void skrivUtPriser(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, boolean sorteraPriser, int maxAntal){
         if (sorteraPriser)
             priser.sort(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh).reversed());
@@ -98,33 +109,6 @@ public class Main {
                         pris.timeStart().toLocalTime(), pris.sekPerKWh()));
         if (priser.size() > maxAntal) System.out.println("...");
     }
-
-    public static Map<String, String> parseArgs(String[] args) {
-        Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].startsWith("--")) {
-                String key = args[i].substring(2).toLowerCase();
-                String value = (i + 1 < args.length && !args[i + 1].startsWith("--")) ? args[++i] : "true";
-                map.put(key, value);
-            }
-        }
-        return map;
-    }
-
-    public static void skrivUtHjälp() {
-        System.out.println("Användning:");
-        System.out.println("--zone SE1|SE2|SE3|SE4 (obligatorisk)");
-        System.out.println("--date YYYY-MM-DD (valfri, standard är idag)");
-        System.out.println("--sorted (valfri, sorterar priser fallande)");
-        System.out.println("--charging 2h|4h|8h (valfri, visar optimalt laddningsfönster)");
-        System.out.println("--help (visar denna hjälptext)");
-        System.out.println("Exempel:");
-        System.out.println("java -cp target/classes com.example.Main --zone SE3 --date 2025-09-04");
-        System.out.println("java -cp target/classes com.example.Main --zone SE1 --charging 4h");
-        System.out.println("java -cp target/classes com.example.Main --zone SE2 --date 2025-09-04 --sorted");
-        System.out.println("java -cp target/classes com.example.Main --help");
-    }
-
     public static void optimaltLaddningsFönster(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int antalTimmar){
 
         //Deklarera variabler att spara pris och startindex i
