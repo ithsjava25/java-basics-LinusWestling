@@ -98,6 +98,33 @@ public class Main {
                         pris.timeStart().toLocalTime(), pris.sekPerKWh()));
         if (priser.size() > maxAntal) System.out.println("...");
     }
+
+    public static Map<String, String> parseArgs(String[] args) {
+        Map<String, String> map = new HashMap<>();
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].startsWith("--")) {
+                String key = args[i].substring(2).toLowerCase();
+                String value = (i + 1 < args.length && !args[i + 1].startsWith("--")) ? args[++i] : "true";
+                map.put(key, value);
+            }
+        }
+        return map;
+    }
+
+    public static void skrivUtHjälp() {
+        System.out.println("Användning:");
+        System.out.println("--zone SE1|SE2|SE3|SE4 (obligatorisk)");
+        System.out.println("--date YYYY-MM-DD (valfri, standard är idag)");
+        System.out.println("--sorted (valfri, sorterar priser fallande)");
+        System.out.println("--charging 2h|4h|8h (valfri, visar optimalt laddningsfönster)");
+        System.out.println("--help (visar denna hjälptext)");
+        System.out.println("Exempel:");
+        System.out.println("java -cp target/classes com.example.Main --zone SE3 --date 2025-09-04");
+        System.out.println("java -cp target/classes com.example.Main --zone SE1 --charging 4h");
+        System.out.println("java -cp target/classes com.example.Main --zone SE2 --date 2025-09-04 --sorted");
+        System.out.println("java -cp target/classes com.example.Main --help");
+    }
+
     public static void optimaltLaddningsFönster(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int antalTimmar){
 
         //Deklarera variabler att spara pris och startindex i
@@ -110,7 +137,7 @@ public class Main {
 
             // Addera priser i sekvenser om hur många timmar man vill ladda
             for (int j = 0; j < antalTimmar; j++){
-                nuvarandePris += priser.get(j).sekPerKWh();
+                nuvarandePris += priser.get(i + j).sekPerKWh();
             }
             // Uppdatera priset ifall det är lägre
             if (nuvarandePris < lägstaPris) {
