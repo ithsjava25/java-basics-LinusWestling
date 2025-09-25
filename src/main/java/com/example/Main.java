@@ -26,27 +26,27 @@ public class Main {
         }
         String valAvPrisKlass = argMap.get("zone").toUpperCase();
 
-        // Skapar ett objekt för värden inom definierad prisklass
-        ElpriserAPI.Prisklass valdKlass = ElpriserAPI.Prisklass.valueOf(valAvPrisKlass);
-
-
         // Skapa en variabel för vilken dag man vill hämta priser
         LocalDate datum = argMap.containsKey("date") ? LocalDate.parse(argMap.get("date")) : LocalDate.now();
 
-        // Hämta priser för valt elområde och datum
-        List<ElpriserAPI.Elpris> dagensPriser = elpriserAPI.getPriser(datum, valdKlass);
-
         // Kolla ifall användaren vill sortera priserna
         boolean sorteraPriser = argMap.containsKey("sorted");
+
+        // Skapar en variabel för vald zon, för att sedan hämta priserna för vald zon och aktuellt datum
+        ElpriserAPI.Prisklass valdKlass = ElpriserAPI.Prisklass.valueOf(valAvPrisKlass);
+        List<ElpriserAPI.Elpris> dagensPriser = elpriserAPI.getPriser(datum, valdKlass);
 
         // Kalla på metod för optimalt laddningsfönster
         if (argMap.containsKey("charging")) {
             int antalTimmar = Integer.parseInt(argMap.get("charging").replace("h", ""));
             optimaltLaddningsFönster(valdKlass, dagensPriser, antalTimmar);
+            return;
         }
 
         System.out.println("Påbörja laddning"); // Behövs vara med enligt testet????
 
+
+        /*
         // IF ---- Enhanced loop for att få fram alla områden
         if(valAvPrisKlass.equals("ALLA")){
             for(ElpriserAPI.Prisklass allaKlasser : ElpriserAPI.Prisklass.values()){
@@ -57,18 +57,16 @@ public class Main {
                 }
             }
         }
-        // ELSE --- framtagning av pris för specifikt område
-        else {
-            try{
-                if (dagensPriser.isEmpty()) {
-                    System.out.println("Kunde inte hämta några priser för " + datum + " i område: " + valdKlass);
-                } else {
-                    skrivUtPriser(valdKlass, dagensPriser, sorteraPriser, 3);
-                }
-            } catch (IllegalArgumentException e){
-                System.out.println("Ogiltigt område angivet, försök igen.");
-            }
+
+         */
+        // framtagning av pris för specifikt område
+
+        if (dagensPriser.isEmpty()) {
+            System.out.println("Kunde inte hämta några priser för " + datum + " i område: " + valdKlass);
+        } else {
+            skrivUtPriser(valdKlass, dagensPriser, sorteraPriser, 3);
         }
+
     }
     public static Map<String, String> parseArgs(String[] args) {
         Map<String, String> map = new HashMap<>();
