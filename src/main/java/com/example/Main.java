@@ -50,9 +50,8 @@ public class Main {
         if (dagensPriser.isEmpty()) {
             System.out.println("inga priser för: " + datum + " i område: " + valdKlass);
         } else {
-            skrivUtPriser(valdKlass, dagensPriser, sorteraPriser, 20);
+            System.out.println(skrivUtPriser(valdKlass, dagensPriser, sorteraPriser, 20));
         }
-
     }
 
     public static Map<String, String> parseArgs(String[] args) {
@@ -98,8 +97,10 @@ public class Main {
                         startTid.format(formatter), slutTid.format(formatter), pris.sekPerKWh() * 100);
                 utskrifter.add(rad);
             });
+            utskrifter.forEach(System.out::println);
             return utskrifter;
         }
+
         // Körs ifall det är en "vanlig utskrift"
         else {
 
