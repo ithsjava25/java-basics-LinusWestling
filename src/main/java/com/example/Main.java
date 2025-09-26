@@ -2,14 +2,12 @@ package com.example;
 
 import com.example.api.ElpriserAPI;
 
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-
-import static com.example.api.ElpriserAPI.Prisklass.SE1;
-import static com.example.api.ElpriserAPI.Prisklass.SE2;
 
 public class Main {
     public static void main(String[] args) {
@@ -25,7 +23,7 @@ public class Main {
         // SKapa API objekt
         ElpriserAPI elpriserAPI = new ElpriserAPI();
 
-            // Kollar ifall input innehåller zon som man vill kolla efter
+        // Kollar ifall input innehåller zon som man vill kolla efter
         if (!argMap.containsKey("zone")) {
             System.out.println("Du måste ange zone");
             skrivUtHjälp();
@@ -87,7 +85,6 @@ public class Main {
             skrivUtPriser(valdKlass, dagensPriser, 100);
         }
     }
-
     public static Map<String, String> parseArgs(String[] args) {
         Map<String, String> map = new HashMap<>();
         for (int i = 0; i < args.length; i++) {
@@ -111,7 +108,7 @@ public class Main {
     }
     public static void skrivUtSorteradePriser(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int maxAntal) {
 
-        // Skapar en objekt för att kunna formatera utskrift om tider längre ner
+        // Skapar en objekt för att kunna formatera utskrift för tider som krävs enl. test
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH");
 
         // Avbryter metod och returnerar tom arraylist ifall det inte finns något i den
@@ -124,26 +121,18 @@ public class Main {
         priser.stream().limit(maxAntal).forEach(pris -> {
             LocalTime startTid = pris.timeStart().toLocalTime();
             LocalTime slutTid = startTid.plusHours(1);
-                System.out.printf("%s-%s %.2f öre\n",
-                        startTid.format(formatter),
-                        slutTid.format(formatter),
-                        pris.sekPerKWh() * 100);
+            System.out.println(startTid + "-" +
+                    slutTid + " " +
+                    formatKommatecken(pris.sekPerKWh() * 100));
         });
-
     }
     public static void skrivUtPriser(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int maxAntal) {
 
-        // Skapar en objekt för att kunna formatera utskrift om tider längre ner
+        // Skapar en objekt för att kunna formatera utskrift för tider som krävs enl. test
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH");
 
         if (priser.isEmpty())
             System.out.println("Inga elpriser tillgängliga...");
-
-
-
-
-
-
 
         int lägstaPrisIndex = -1;
         int högstaPrisIndex = -1;
@@ -171,21 +160,38 @@ public class Main {
         LocalTime högstaPrisKlockan = LocalTime.of((högstaPrisIndex), 0);
         LocalTime lägstaPrisKlockan = LocalTime.of(lägstaPrisIndex, 0);
 
-        System.out.printf("\nDagens elpriser för %s (%d st värden):\n", valdKlass, priser.size());
-        System.out.printf("Medelpriset för dagen är: %.2f öre\n", (meanPrice / priser.size()) * 100);
-        System.out.printf("Lägsta priset är: %.2f öre kl. %s\n", lowestPrice * 100, lägstaPrisKlockan.format(formatter), lägstaPrisKlockan.plusHours(1).format(formatter));
-        System.out.printf("\nHögsta priset är: %.2f öre kl. %s-%s\n", highestPrice * 100, högstaPrisKlockan.format(formatter), högstaPrisKlockan.plusHours(1).format(formatter));
+        System.out.printf("\nElpriser för %s (%d st värden):\n", valdKlass, priser.size());
+        System.out.printf("Medelpris: %.2f öre\n", (meanPrice / priser.size()) * 100);
+        System.out.printf("Lägsta pris: %.2f öre kl. %s\n", lowestPrice * 100, lägstaPrisKlockan.format(formatter), lägstaPrisKlockan.plusHours(1).format(formatter));
+        System.out.printf("Högsta pris: %.2f öre kl. %s-%s\n", highestPrice * 100, högstaPrisKlockan.format(formatter), högstaPrisKlockan.plusHours(1).format(formatter));
 
-        // Skriv ut antal rader som efterfrågas i metoden
-        priser.stream().limit(maxAntal).forEach(pris -> {
-            LocalTime startTid = pris.timeStart().toLocalTime();
-            LocalTime slutTid = startTid.plusHours(1);
-            System.out.printf("\n%s-%s %.2f öre",
-                    startTid.format(formatter), slutTid.format(formatter), pris.sekPerKWh() * 100);
-        });
-        if (priser.size() > maxAntal)
-            System.out.println("...");
+        if (priser.size() == 96) {
+            for (int hour = 0; hour < 24; hour++) {
 
+                double summaTimpris = 0;
+
+                for (int quarter = 0; quarter < 4; quarter++) {
+                    int index = hour * 4 + quarter;
+                    summaTimpris += priser.get(index).sekPerKWh();
+                }
+                summaTimpris = summaTimpris / 4;
+                LocalTime startTid = LocalTime.of((hour), 0);
+                LocalTime slutTid = startTid.plusHours(1);
+                System.out.printf("\nMedelpriset mellan %s-%s är %.2f öre",
+                        startTid.format(formatter), slutTid.format(formatter), summaTimpris * 100);
+            }
+        } else {
+            // Skriv ut antal rader som efterfrågas i metoden
+            priser.stream().limit(maxAntal).forEach(pris -> {
+                LocalTime startTid = pris.timeStart().toLocalTime();
+                LocalTime slutTid = startTid.plusHours(1);
+                System.out.println(startTid.format(formatter) + "-" +
+                        slutTid.format(formatter) + " " +
+                        formatKommatecken(pris.sekPerKWh() * 100));
+            });
+            if (priser.size() > maxAntal)
+                System.out.println("Det finns fler priser att visa ... ");
+        }
     }
     public static void optimaltLaddningsFönster(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int antalTimmar) {
 
@@ -221,5 +227,9 @@ public class Main {
         } else {
             System.out.println("Något gick fel när jag försökte hitta laddningsfönster för " + valdKlass);
         }
+    }
+    public static String formatKommatecken(double prisIÖre) {
+        NumberFormat formatKommatecken = NumberFormat.getNumberInstance(new Locale("sv", "SE"));
+        return formatKommatecken.format(prisIÖre);
     }
 }
