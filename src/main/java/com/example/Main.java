@@ -220,12 +220,16 @@ public class Main {
             System.out.println("\nLägsta pris för att ladda inom: " + valdKlass + " (" + antalTimmar + "h):");
             for (int i = bästaStartIndex; i < bästaStartIndex + antalTimmar; i++) {
                 ElpriserAPI.Elpris pris = priser.get(i);
-                System.out.printf("Klockan: %s, Pris: %.4f SEK/kWh\n",
-                        pris.timeStart().toLocalTime(), pris.sekPerKWh());
+                System.out.println("Klockan: " +
+                        pris.timeStart().toLocalTime().format(tidFormatter()) + ", Pris: " +
+                        formatKommatecken(pris.sekPerKWh() * 100) + " öre/kWh");
             }
             LocalTime påBörjaLaddning = LocalTime.of(bästaStartIndex, 0);
             System.out.println("\nPåbörja laddning kl " + påBörjaLaddning);
-            System.out.printf("Totalt pris för %dh: %.1f öre. Medelpris för fönster: %.2f öre\n", antalTimmar, (lägstaPris * 100), ((lägstaPris / antalTimmar) * 100));
+
+            System.out.println("Totalt pris för " + antalTimmar + "h: " +
+                    formatKommatecken(lägstaPris * 100) + " öre. Medelpris för fönster: " +
+                    formatKommatecken((lägstaPris / antalTimmar) * 100) + " öre");
         } else {
             System.out.println("Något gick fel när jag försökte hitta laddningsfönster för " + valdKlass);
         }
