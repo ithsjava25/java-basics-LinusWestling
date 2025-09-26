@@ -155,14 +155,14 @@ public class Main {
         LocalTime lägstaPrisKlockan = LocalTime.of(lägstaPrisIndex, 0);
 
         System.out.printf("\nElpriser för %s (%d st värden):\n", valdKlass, priser.size());
-        System.out.printf("Medelpris: %.2f öre\n", (meanPrice / priser.size()) * 100);
+        System.out.println("Medelpris: " + formatKommatecken((meanPrice / priser.size()) * 100) + " öre");
         System.out.println("Lägsta pris: " + formatKommatecken(lowestPrice * 100) +
                 " öre kl. " + lägstaPrisKlockan.format(tidFormatter()) +
                 "-" + lägstaPrisKlockan.plusHours(1).format(tidFormatter()));
 
         System.out.println("Högsta pris: " + formatKommatecken(highestPrice * 100) +
                 " öre kl. " + högstaPrisKlockan.format(tidFormatter()) +
-                "-" + högstaPrisKlockan.plusHours(1).format(tidFormatter()));
+                "-" + högstaPrisKlockan.plusHours(1).format(tidFormatter()) + "\n");
 
 
         if (priser.size() == 96) {
@@ -177,7 +177,7 @@ public class Main {
                 summaTimpris = summaTimpris / 4;
                 LocalTime startTid = LocalTime.of((hour), 0);
                 LocalTime slutTid = startTid.plusHours(1);
-                System.out.println("\nMedelpriset mellan " +
+                System.out.println("Medelpriset mellan " +
                         startTid.format(tidFormatter()) + "-" +
                         slutTid.format(tidFormatter()) + " är " +
                         formatKommatecken(summaTimpris * 100) + " öre");
@@ -219,9 +219,10 @@ public class Main {
         if (bästaStartIndex >= 0) {
             System.out.println("\nLägsta pris för att ladda inom: " + valdKlass + " (" + antalTimmar + "h):");
             for (int i = bästaStartIndex; i < bästaStartIndex + antalTimmar; i++) {
+                System.out.println(">>>> Kör optimaltLaddningsFönster för " + valdKlass + " <<<<");
                 ElpriserAPI.Elpris pris = priser.get(i);
                 System.out.println("Klockan: " +
-                        pris.timeStart().toLocalTime().format(tidFormatter()) + ", Pris: " +
+                        pris.timeStart().toLocalTime() + ", Pris: " +
                         formatKommatecken(pris.sekPerKWh() * 100) + " öre/kWh");
             }
             LocalTime påBörjaLaddning = LocalTime.of(bästaStartIndex, 0);
