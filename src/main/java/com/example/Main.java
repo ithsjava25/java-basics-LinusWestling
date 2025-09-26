@@ -108,9 +108,6 @@ public class Main {
     }
     public static void skrivUtSorteradePriser(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int maxAntal) {
 
-        // Skapar en objekt för att kunna formatera utskrift för tider som krävs enl. test
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH");
-
         // Avbryter metod och returnerar tom arraylist ifall det inte finns något i den
         if (priser.isEmpty())
             System.out.println("Inga elpriser tillgängliga...");
@@ -121,15 +118,12 @@ public class Main {
         priser.stream().limit(maxAntal).forEach(pris -> {
             LocalTime startTid = pris.timeStart().toLocalTime();
             LocalTime slutTid = startTid.plusHours(1);
-            System.out.println(startTid + "-" +
-                    slutTid + " " +
-                    formatKommatecken(pris.sekPerKWh() * 100));
+            System.out.println(startTid.format(tidFormatter()) + "-" +
+                    slutTid.format(tidFormatter()) + " " +
+                    formatKommatecken(pris.sekPerKWh() * 100) + " öre");
         });
     }
     public static void skrivUtPriser(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int maxAntal) {
-
-        // Skapar en objekt för att kunna formatera utskrift för tider som krävs enl. test
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH");
 
         if (priser.isEmpty())
             System.out.println("Inga elpriser tillgängliga...");
@@ -162,8 +156,14 @@ public class Main {
 
         System.out.printf("\nElpriser för %s (%d st värden):\n", valdKlass, priser.size());
         System.out.printf("Medelpris: %.2f öre\n", (meanPrice / priser.size()) * 100);
-        System.out.printf("Lägsta pris: %.2f öre kl. %s\n", lowestPrice * 100, lägstaPrisKlockan.format(formatter), lägstaPrisKlockan.plusHours(1).format(formatter));
-        System.out.printf("Högsta pris: %.2f öre kl. %s-%s\n", highestPrice * 100, högstaPrisKlockan.format(formatter), högstaPrisKlockan.plusHours(1).format(formatter));
+        System.out.println("Lägsta pris: " + formatKommatecken(lowestPrice * 100) +
+                " öre kl. " + lägstaPrisKlockan.format(tidFormatter()) +
+                "-" + lägstaPrisKlockan.plusHours(1).format(tidFormatter()));
+
+        System.out.println("Högsta pris: " + formatKommatecken(highestPrice * 100) +
+                " öre kl. " + högstaPrisKlockan.format(tidFormatter()) +
+                "-" + högstaPrisKlockan.plusHours(1).format(tidFormatter()));
+
 
         if (priser.size() == 96) {
             for (int hour = 0; hour < 24; hour++) {
@@ -177,17 +177,19 @@ public class Main {
                 summaTimpris = summaTimpris / 4;
                 LocalTime startTid = LocalTime.of((hour), 0);
                 LocalTime slutTid = startTid.plusHours(1);
-                System.out.printf("\nMedelpriset mellan %s-%s är %.2f öre",
-                        startTid.format(formatter), slutTid.format(formatter), summaTimpris * 100);
+                System.out.println("\nMedelpriset mellan " +
+                        startTid.format(tidFormatter()) + "-" +
+                        slutTid.format(tidFormatter()) + " är " +
+                        formatKommatecken(summaTimpris * 100) + " öre");
             }
         } else {
             // Skriv ut antal rader som efterfrågas i metoden
             priser.stream().limit(maxAntal).forEach(pris -> {
                 LocalTime startTid = pris.timeStart().toLocalTime();
                 LocalTime slutTid = startTid.plusHours(1);
-                System.out.println(startTid.format(formatter) + "-" +
-                        slutTid.format(formatter) + " " +
-                        formatKommatecken(pris.sekPerKWh() * 100));
+                System.out.println(startTid.format(tidFormatter()) + "-" +
+                        slutTid.format(tidFormatter()) + " " +
+                        formatKommatecken(pris.sekPerKWh() * 100) + " öre");
             });
             if (priser.size() > maxAntal)
                 System.out.println("Det finns fler priser att visa ... ");
@@ -230,6 +232,11 @@ public class Main {
     }
     public static String formatKommatecken(double prisIÖre) {
         NumberFormat formatKommatecken = NumberFormat.getNumberInstance(new Locale("sv", "SE"));
+        formatKommatecken.setMinimumFractionDigits(2);
+        formatKommatecken.setMaximumFractionDigits(2);
         return formatKommatecken.format(prisIÖre);
+    }
+    public static DateTimeFormatter tidFormatter() {
+        return DateTimeFormatter.ofPattern("HH");
     }
 }
