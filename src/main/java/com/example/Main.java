@@ -25,7 +25,7 @@ public class Main {
         // SKapa API objekt
         ElpriserAPI elpriserAPI = new ElpriserAPI();
 
-        // Kollar ifall input innehåller zon som man vill kolla efter
+            // Kollar ifall input innehåller zon som man vill kolla efter
         if (!argMap.containsKey("zone")) {
             System.out.println("Du måste ange zone");
             skrivUtHjälp();
@@ -138,6 +138,12 @@ public class Main {
 
         if (priser.isEmpty())
             System.out.println("Inga elpriser tillgängliga...");
+
+
+
+
+
+
 
         int lägstaPrisIndex = -1;
         int högstaPrisIndex = -1;
