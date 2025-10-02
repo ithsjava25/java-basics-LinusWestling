@@ -3,19 +3,18 @@ package com.example;
 import com.example.api.ElpriserAPI;
 
 import java.text.NumberFormat;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.*;
+import java.time.chrono.ChronoZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) {
 
-        System.out.println("___________ Testar Elpriser API _____________");
-        Map<String, String> argMap = parseArgs(args);
-
         // Variabler / objekt som behövs i main
+        Map<String, String> argMap = parseArgs(args);
         ElpriserAPI elpriserAPI = new ElpriserAPI();
         ElpriserAPI.Prisklass valdKlass;
         LocalDate datum;
@@ -54,23 +53,24 @@ public class Main {
         }
 
         // Hämta priser för båda dagarna och lägga till i samma arrayList om det finns data i dom
-        List<ElpriserAPI.Elpris> sammanslagnaPriser = new ArrayList<>();
-        List<ElpriserAPI.Elpris> dagensPriser = elpriserAPI.getPriser(datum, valdKlass);
+        List<ElpriserAPI.Elpris> framtidaSammanslagnaPriser = new ArrayList<>();
+        ZonedDateTime nu = ZonedDateTime.now(ZoneId.of("Europe/Stockholm"));
+        List<ElpriserAPI.Elpris> dagensPriser = elpriserAPI.getPriser(datum, valdKlass).stream().filter(pris -> pris.timeStart().isAfter(nu)).toList();
         List<ElpriserAPI.Elpris> morgonDagensPriser = elpriserAPI.getPriser(datum.plusDays(1), valdKlass);
-        if (dagensPriser != null && morgonDagensPriser != null) {
-            sammanslagnaPriser.addAll(dagensPriser);
-            sammanslagnaPriser.addAll(morgonDagensPriser);
+        if (!dagensPriser.isEmpty() || !morgonDagensPriser.isEmpty()) {
+            framtidaSammanslagnaPriser.addAll(dagensPriser);
+            framtidaSammanslagnaPriser.addAll(morgonDagensPriser);
         }
 
         // Kalla på rätt utskriftsmetod beroende på ifall terminalen innehåller charging, sorted eller inget av dom.
-        if (sammanslagnaPriser.isEmpty() || dagensPriser.isEmpty()) {
+        if (framtidaSammanslagnaPriser.isEmpty() || dagensPriser.isEmpty()) {
             System.out.println("inga priser tillgängliga i område: " + valdKlass);
         } else if (argMap.containsKey("charging".toLowerCase())) {
             int antalTimmar = Integer.parseInt(argMap.get("charging").replace("h", ""));
-            optimaltLaddningsFönster(valdKlass, sammanslagnaPriser, antalTimmar);
+            optimaltLaddningsFönster(valdKlass, framtidaSammanslagnaPriser, antalTimmar);
             return;
         } else if (argMap.containsKey("sorted")){
-            skrivUtSorteradePriser(valdKlass, sammanslagnaPriser, 20);
+            skrivUtSorteradePriser(valdKlass, framtidaSammanslagnaPriser, 20);
         } else {
             skrivUtPriser(valdKlass, dagensPriser, 100);
         }
@@ -148,7 +148,7 @@ public class Main {
                 summaTimpris = summaTimpris / 4;
                 System.out.println("Medelpriset mellan " +
                         LocalTime.of((hour), 0).format(tidFormatter()) + "-" +
-                        LocalTime.of(hour, 0).plusHours(1).plusHours(1).format(tidFormatter()) + " är " +
+                        LocalTime.of(hour, 0).plusHours(1).format(tidFormatter()) + " är " +
                         formateraPrisIÖre(summaTimpris) + " öre");
             }
         }
@@ -168,12 +168,11 @@ public class Main {
 
         //Deklarera variabler att spara pris och startindex i
         double lägstaPris = Double.MAX_VALUE;
-        int bästaStartIndex = -1;
+        int bästaStartIndex = 0;
 
         // Loop för att iterera genom alla priser i listan för dagen och elområdet
         for (int i = 0; i <= priser.size() - antalTimmar; i++) {
             double nuvarandePris = 0;
-
             // Addera priser i sekvenser om hur många timmar man vill ladda och öka totalpriset
             for (int j = 0; j < antalTimmar; j++) {
                 nuvarandePris += priser.get(i + j).sekPerKWh();
@@ -186,16 +185,17 @@ public class Main {
         }
         // Skriv ut priserna
         if (bästaStartIndex >= 0) {
-            System.out.println("\nLägsta pris för att ladda inom: " + valdKlass + " (" + antalTimmar + "h):");
+            System.out.println(">>>> Kör optimaltLaddningsFönster för " + valdKlass + " <<<<");
+            System.out.println("\nLägsta pris för att ladda inom: " + valdKlass + " (" + antalTimmar + "h) är:");
             for (int i = bästaStartIndex; i < bästaStartIndex + antalTimmar; i++) {
-                System.out.println(">>>> Kör optimaltLaddningsFönster för " + valdKlass + " <<<<");
                 ElpriserAPI.Elpris pris = priser.get(i);
                 System.out.println("Klockan: " +
                         pris.timeStart().toLocalTime() + ", Pris: " +
                         formateraPrisIÖre(pris.sekPerKWh()) + " öre/kWh");
             }
-            LocalTime påBörjaLaddning = LocalTime.of(bästaStartIndex, 0);
-            System.out.println("\nPåbörja laddning kl " + påBörjaLaddning);
+            LocalTime påBörjaLaddning = priser.get(bästaStartIndex).timeStart().toLocalTime();
+            LocalTime slutTid = priser.get(bästaStartIndex + antalTimmar - 1).timeStart().toLocalTime().plusHours(1);
+            System.out.println("\nPåbörja laddning kl " + påBörjaLaddning + " och avsluta laddning kl " + slutTid);
 
             System.out.println("Totalt pris för " + antalTimmar + "h: " +
                     formateraPrisIÖre(lägstaPris) + " öre. Medelpris för fönster: " +
