@@ -122,69 +122,38 @@ public class Main {
             return;
         }
 
+        // Beräkning av medelpris, lägstapris och högstapris
+        double meanPrice = priser.stream().mapToDouble(ElpriserAPI.Elpris::sekPerKWh).average().orElse(0);
+        ElpriserAPI.Elpris lowestPrice = priser.stream().min(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh)).orElse(null);
+        ElpriserAPI.Elpris highestPrice = priser.stream().max(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh)).orElse(null);
 
-        // Variabler som kommer att behövas
-        double meanPrice = 0;
-        int lägstaPrisIndex = -1;
-        int högstaPrisIndex = -1;
-        double lowestPrice = Double.MAX_VALUE;
-        double highestPrice = 0;
-
-        // Loop för att räkna ut medelpriset
-        for (int i = 0; i < priser.size(); i++) {
-            meanPrice += priser.get(i).sekPerKWh();
-            if (i + 1 == priser.size()){
-                meanPrice = meanPrice / priser.size();
-            }
-        }
-                 // double meanPrice = priser.stream().mapToDouble(ElpriserAPI.Elpris::sekPerKWh).average().orElse(0);
-
-        // Beräkna högsta och lägsta pris
-        for (int i = 0; i < priser.size(); i++) {
-            if (priser.get(i).sekPerKWh() < lowestPrice) {
-                lowestPrice = priser.get(i).sekPerKWh();
-                lägstaPrisIndex = i;
-            }
-
-            if (priser.get(i).sekPerKWh() > highestPrice) {
-                highestPrice = priser.get(i).sekPerKWh();
-                högstaPrisIndex = i / 4;
-            }
-        }
-
-        // Konvertera tids-index till klockslag
-        LocalTime högstaPrisKlockan = LocalTime.of((högstaPrisIndex), 0);
-        LocalTime lägstaPrisKlockan = LocalTime.of(lägstaPrisIndex, 0);
-
-        System.out.printf("\nElpriser för %s (%d st värden):\n", valdKlass, priser.size());
+        // Utskrifter
+        System.out.printf("\nElpriser för %s (%d st värden):", valdKlass, priser.size());
         System.out.println("Medelpris: " + formatKommatecken(meanPrice * 100) + " öre");
-        System.out.println("Lägsta pris: " + formatKommatecken(lowestPrice * 100) +
-                " öre kl. " + lägstaPrisKlockan.format(tidFormatter()) +
-                "-" + lägstaPrisKlockan.plusHours(1).format(tidFormatter()));
+        System.out.println("Lägsta pris: " + formatKommatecken(lowestPrice.sekPerKWh() * 100) +
+                " öre kl. " + lowestPrice.timeStart().toLocalTime().format(tidFormatter()) +
+                "-" + lowestPrice.timeStart().toLocalTime().plusHours(1).format(tidFormatter()));
+        System.out.println("Högsta pris: " + formatKommatecken(highestPrice.sekPerKWh() * 100) +
+                " öre kl. " + highestPrice.timeStart().toLocalTime().format(tidFormatter()) +
+                "-" + highestPrice.timeStart().toLocalTime().plusHours(1).format(tidFormatter()) + "\n");
 
-        System.out.println("Högsta pris: " + formatKommatecken(highestPrice * 100) +
-                " öre kl. " + högstaPrisKlockan.format(tidFormatter()) +
-                "-" + högstaPrisKlockan.plusHours(1).format(tidFormatter()) + "\n");
-
-
+        // Hantering av priser varje kvart
         if (priser.size() == 96) {
             for (int hour = 0; hour < 24; hour++) {
-
                 double summaTimpris = 0;
-
                 for (int quarter = 0; quarter < 4; quarter++) {
                     int index = hour * 4 + quarter;
                     summaTimpris += priser.get(index).sekPerKWh();
                 }
                 summaTimpris = summaTimpris / 4;
-                LocalTime startTid = LocalTime.of((hour), 0);
-                LocalTime slutTid = startTid.plusHours(1);
                 System.out.println("Medelpriset mellan " +
-                        startTid.format(tidFormatter()) + "-" +
-                        slutTid.format(tidFormatter()) + " är " +
+                        LocalTime.of((hour), 0).format(tidFormatter()) + "-" +
+                        LocalTime.of(hour, 0).plusHours(1).plusHours(1).format(tidFormatter()) + " är " +
                         formatKommatecken(summaTimpris * 100) + " öre");
             }
-        } else {
+        }
+        // Ifall det INTE är 96 datapunkter
+        else {
             // Skriv ut antal rader som efterfrågas i metoden
             priser.stream().limit(maxAntal).forEach(pris -> {
                 LocalTime startTid = pris.timeStart().toLocalTime();
@@ -193,8 +162,6 @@ public class Main {
                         slutTid.format(tidFormatter()) + " " +
                         formatKommatecken(pris.sekPerKWh() * 100) + " öre");
             });
-            if (priser.size() > maxAntal)
-                System.out.println("Det finns fler priser att visa ... ");
         }
     }
     public static void optimaltLaddningsFönster(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int antalTimmar) {
