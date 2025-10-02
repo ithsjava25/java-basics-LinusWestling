@@ -112,7 +112,7 @@ public class Main {
             LocalTime slutTid = startTid.plusHours(1);
             System.out.println(startTid.format(tidFormatter()) + "-" +
                     slutTid.format(tidFormatter()) + " " +
-                    formatKommatecken(pris.sekPerKWh() * 100) + " öre");
+                    formateraPrisIÖre(pris.sekPerKWh()) + " öre");
         });
     }
     public static void skrivUtPriser(ElpriserAPI.Prisklass valdKlass, List<ElpriserAPI.Elpris> priser, int maxAntal) {
@@ -129,11 +129,11 @@ public class Main {
 
         // Utskrifter
         System.out.printf("\nElpriser för %s (%d st värden):", valdKlass, priser.size());
-        System.out.println("Medelpris: " + formatKommatecken(meanPrice * 100) + " öre");
-        System.out.println("Lägsta pris: " + formatKommatecken(lowestPrice.sekPerKWh() * 100) +
+        System.out.println("Medelpris: " + formateraPrisIÖre(meanPrice) + " öre");
+        System.out.println("Lägsta pris: " + formateraPrisIÖre(lowestPrice.sekPerKWh()) +
                 " öre kl. " + lowestPrice.timeStart().toLocalTime().format(tidFormatter()) +
                 "-" + lowestPrice.timeStart().toLocalTime().plusHours(1).format(tidFormatter()));
-        System.out.println("Högsta pris: " + formatKommatecken(highestPrice.sekPerKWh() * 100) +
+        System.out.println("Högsta pris: " + formateraPrisIÖre(highestPrice.sekPerKWh()) +
                 " öre kl. " + highestPrice.timeStart().toLocalTime().format(tidFormatter()) +
                 "-" + highestPrice.timeStart().toLocalTime().plusHours(1).format(tidFormatter()) + "\n");
 
@@ -149,18 +149,18 @@ public class Main {
                 System.out.println("Medelpriset mellan " +
                         LocalTime.of((hour), 0).format(tidFormatter()) + "-" +
                         LocalTime.of(hour, 0).plusHours(1).plusHours(1).format(tidFormatter()) + " är " +
-                        formatKommatecken(summaTimpris * 100) + " öre");
+                        formateraPrisIÖre(summaTimpris) + " öre");
             }
         }
         // Ifall det INTE är 96 datapunkter
         else {
-            // Skriv ut antal rader som efterfrågas i metoden
+            // Skriv ut datapunkterna upp till det högsta antal som efterfrågas i anropet av metoden
             priser.stream().limit(maxAntal).forEach(pris -> {
                 LocalTime startTid = pris.timeStart().toLocalTime();
                 LocalTime slutTid = startTid.plusHours(1);
                 System.out.println(startTid.format(tidFormatter()) + "-" +
                         slutTid.format(tidFormatter()) + " " +
-                        formatKommatecken(pris.sekPerKWh() * 100) + " öre");
+                        formateraPrisIÖre(pris.sekPerKWh()) + " öre");
             });
         }
     }
@@ -192,23 +192,24 @@ public class Main {
                 ElpriserAPI.Elpris pris = priser.get(i);
                 System.out.println("Klockan: " +
                         pris.timeStart().toLocalTime() + ", Pris: " +
-                        formatKommatecken(pris.sekPerKWh() * 100) + " öre/kWh");
+                        formateraPrisIÖre(pris.sekPerKWh()) + " öre/kWh");
             }
             LocalTime påBörjaLaddning = LocalTime.of(bästaStartIndex, 0);
             System.out.println("\nPåbörja laddning kl " + påBörjaLaddning);
 
             System.out.println("Totalt pris för " + antalTimmar + "h: " +
-                    formatKommatecken(lägstaPris * 100) + " öre. Medelpris för fönster: " +
-                    formatKommatecken((lägstaPris / antalTimmar) * 100) + " öre");
+                    formateraPrisIÖre(lägstaPris) + " öre. Medelpris för fönster: " +
+                    formateraPrisIÖre(lägstaPris / antalTimmar) + " öre");
         } else {
             System.out.println("Något gick fel när jag försökte hitta laddningsfönster för " + valdKlass);
         }
     }
-    public static String formatKommatecken(double prisIÖre) {
+    public static String formateraPrisIÖre(double sekPerKWh) {
         NumberFormat formatKommatecken = NumberFormat.getNumberInstance(new Locale("sv", "SE"));
         formatKommatecken.setMinimumFractionDigits(2);
         formatKommatecken.setMaximumFractionDigits(2);
-        return formatKommatecken.format(prisIÖre);
+        double örePerKWh = sekPerKWh * 100;
+        return formatKommatecken.format(örePerKWh);
     }
     public static DateTimeFormatter tidFormatter() {
         return DateTimeFormatter.ofPattern("HH");
