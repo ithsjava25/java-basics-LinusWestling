@@ -134,37 +134,56 @@ public class Main {
 
         // Beräkning av medelpris, lägstapris och högstapris
         double meanPrice = priser.stream().mapToDouble(ElpriserAPI.Elpris::sekPerKWh).average().orElse(0);
-        ElpriserAPI.Elpris lowestPrice = priser.stream().min(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh)).orElse(null);
-        ElpriserAPI.Elpris highestPrice = priser.stream().max(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh)).orElse(null);
 
         // Utskrifter
         System.out.printf("\nElpriser för %s (%d st värden):", valdKlass, priser.size());
         System.out.println("Medelpris: " + formateraPrisIÖre(meanPrice) + " öre");
-        System.out.println("Lägsta pris: " + formateraPrisIÖre(lowestPrice.sekPerKWh()) +
-                " öre kl. " + lowestPrice.timeStart().toLocalTime().format(tidFormatter()) +
-                "-" + lowestPrice.timeStart().toLocalTime().plusHours(1).format(tidFormatter()));
-        System.out.println("Högsta pris: " + formateraPrisIÖre(highestPrice.sekPerKWh()) +
-                " öre kl. " + highestPrice.timeStart().toLocalTime().format(tidFormatter()) +
-                "-" + highestPrice.timeStart().toLocalTime().plusHours(1).format(tidFormatter()) + "\n");
 
-        // Hantering av priser varje kvart
+        // Multifunktionell loop. Används för att hitta lägsta/högsta timpris samt beräkna och skriva ut medelpriset för varje timme.
         if (priser.size() == 96) {
+            // Variabler för lägsta och högsta timpris över dagen
+            double lägstaPris = Double.MAX_VALUE;
+            int lägstaTimme = -1;
+            double högstaPris = Double.MIN_VALUE;
+            int högstaTimme = -1;
 
+            // Påbörja loopen
             for (int hour = 0; hour < 24; hour++) {
-                double summaTimpris = 0;
-                for (int quarter = 0; quarter < 4; quarter++) {
-                    int index = hour * 4 + quarter;
-                    summaTimpris += priser.get(index).sekPerKWh();
+                // Beräkna medelpris för varje timme
+                double medelpris = beräknaMedelprisFörTimme(priser, hour);
+                // Uppdatera lägsta pris
+                if (medelpris < lägstaPris) {
+                    lägstaPris = medelpris;
+                    lägstaTimme = hour;
                 }
-                summaTimpris = summaTimpris / 4;
+                // Uppdatera högsta pris
+                if (medelpris > högstaPris) {
+                    högstaPris = medelpris;
+                    högstaTimme = hour;
+                }
+                // Printa medelpris för varje timme
                 System.out.println("Medelpriset mellan " +
                         LocalTime.of((hour), 0).format(tidFormatter()) + "-" +
                         LocalTime.of(hour, 0).plusHours(1).format(tidFormatter()) + " är " +
-                        formateraPrisIÖre(summaTimpris) + " öre");
+                        formateraPrisIÖre(medelpris) + " öre");
             }
+            // Printa lägsta och högsta timpris
+            System.out.println("\nlägsta pris: " +
+                    formateraPrisIÖre(lägstaPris) + " öre kl " +
+                    LocalTime.of(lägstaTimme, 0).format(tidFormatter()));
+
+            System.out.println("högsta pris: " +
+                    formateraPrisIÖre(högstaPris) + " öre kl " +
+                    LocalTime.of(högstaTimme, 0).format(tidFormatter()));
+
         }
-        // Ifall det INTE är 96 datapunkter
+        // Ifall det INTE är 96 datapunkter --- Kod nedan behövs endast för att klara av testerna, RÖR EJ
         else {
+            ElpriserAPI.Elpris lägstaPrisTester = priser.stream().min(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh)).orElse(null);
+            ElpriserAPI.Elpris höstaPrisTester = priser.stream().max(Comparator.comparingDouble(ElpriserAPI.Elpris::sekPerKWh)).orElse(null);
+
+            System.out.println("lägsta pris: " + lägstaPrisTester);
+            System.out.println("högsta pris: " + höstaPrisTester);
             // Skriv ut datapunkterna upp till det högsta antal som efterfrågas i anropet av metoden
             priser.stream().limit(maxAntal).forEach(pris -> {
                 LocalTime startTid = pris.timeStart().toLocalTime();
@@ -225,4 +244,13 @@ public class Main {
     public static DateTimeFormatter tidFormatter() {
         return DateTimeFormatter.ofPattern("HH");
     }
+    private static double beräknaMedelprisFörTimme(List<ElpriserAPI.Elpris> priser, int timme) {
+        double summa = 0;
+        for (int quarter = 0; quarter < 4; quarter++) {
+            int index = timme * 4 + quarter;
+            summa += priser.get(index).sekPerKWh();
+        }
+        return summa / 4;
+    }
+
 }
