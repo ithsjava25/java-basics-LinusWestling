@@ -28,7 +28,10 @@ public class Main {
 
         // Kollar ifall input innehåller zon som man vill kolla efter
         if (!argMap.containsKey("zone")) {
-            System.out.println("Du måste ange zone");
+            System.out.print("Ange elpriszon (SE1, SE2, SE3, SE4): ");
+            Scanner scanner = new Scanner(System.in);
+            String inputZone = scanner.nextLine().trim().toUpperCase();
+            argMap.put("zone", inputZone);
             skrivUtHjälp();
             return;
         } else {
