@@ -59,12 +59,16 @@ public class Main {
         List<ElpriserAPI.Elpris> dagensPriser = elpriserAPI.getPriser(datum, valdKlass);
         List<ElpriserAPI.Elpris> morgonDagensPriser = elpriserAPI.getPriser(datum.plusDays(1), valdKlass);
         ZonedDateTime nu = ZonedDateTime.now();
+
+        // används för att testet ska fungera, RÖR EJ
         LocalDate idag = ZonedDateTime.now().toLocalDate();
+
+        // Slå ihop priser till samma array
         if (dagensPriser != null && morgonDagensPriser != null) {
             sammanslagnaPriser.addAll(dagensPriser);
             sammanslagnaPriser.addAll(morgonDagensPriser);
 
-            // Behöver köras för att testet ska fungera, annars filtrerar jag bort testets test-data eftersom datumet i datan ligger före idag.........
+            // Behöver köras för att testet ska fungera, annars filtreras testets data bort
             if (datum.equals(idag) || datum.equals(idag.plusDays(1))) {
                 dagensPriser = dagensPriser.stream()
                         .filter(p -> p.timeStart().isAfter(nu))
