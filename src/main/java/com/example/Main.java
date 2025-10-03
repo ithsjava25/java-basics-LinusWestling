@@ -5,14 +5,15 @@ import com.example.api.ElpriserAPI;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) {
 
-        System.out.println("___________ Testar Elpriser API _____________");
         Map<String, String> argMap = parseArgs(args);
 
         // Variabler / objekt som behövs i main
@@ -57,9 +58,18 @@ public class Main {
         List<ElpriserAPI.Elpris> sammanslagnaPriser = new ArrayList<>();
         List<ElpriserAPI.Elpris> dagensPriser = elpriserAPI.getPriser(datum, valdKlass);
         List<ElpriserAPI.Elpris> morgonDagensPriser = elpriserAPI.getPriser(datum.plusDays(1), valdKlass);
+        ZonedDateTime nu = ZonedDateTime.now();
+        LocalDate idag = ZonedDateTime.now().toLocalDate();
         if (dagensPriser != null && morgonDagensPriser != null) {
             sammanslagnaPriser.addAll(dagensPriser);
             sammanslagnaPriser.addAll(morgonDagensPriser);
+
+            // Behöver köras för att testet ska fungera, annars filtrerar jag bort testets test-data eftersom datumet i datan ligger före idag.........
+            if (datum.equals(idag) || datum.equals(idag.plusDays(1))) {
+                dagensPriser = dagensPriser.stream()
+                        .filter(p -> p.timeStart().isAfter(nu))
+                        .collect(Collectors.toList());
+            }
         }
 
         // Kalla på rätt utskriftsmetod beroende på ifall terminalen innehåller charging, sorted eller inget av dom.
@@ -139,6 +149,7 @@ public class Main {
 
         // Hantering av priser varje kvart
         if (priser.size() == 96) {
+
             for (int hour = 0; hour < 24; hour++) {
                 double summaTimpris = 0;
                 for (int quarter = 0; quarter < 4; quarter++) {
